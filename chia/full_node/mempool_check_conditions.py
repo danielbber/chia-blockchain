@@ -12,7 +12,7 @@ from chia.types.coin_record import CoinRecord
 from chia.types.condition_with_args import ConditionWithArgs
 from chia.types.generator_types import BlockGenerator
 from chia.types.name_puzzle_condition import NPC
-from chia.util.clvm import int_from_bytes
+from chia.util.clvm import int_from_bytes, int_to_bytes
 from chia.util.condition_tools import ConditionOpcode, conditions_by_opcode
 from chia.util.errors import Err, ValidationError
 from chia.util.ints import uint32, uint64, uint16
@@ -160,7 +160,9 @@ def parse_create_coin(args: SExp) -> List[bytes]:
         raise ValidationError(Err.COIN_AMOUNT_EXCEEDS_MAXIMUM)
     if amount_int < 0:
         raise ValidationError(Err.COIN_AMOUNT_NEGATIVE)
-    return [puzzle_hash, amount]
+    # note that this may change the representation of amount. If the original
+    # buffer had redundant leading zeroes, they will be stripped
+    return [puzzle_hash, int_to_bytes(amount_int)]
 
 
 def parse_seconds(args: SExp, error_code: Err) -> Optional[List[bytes]]:
@@ -173,7 +175,9 @@ def parse_seconds(args: SExp, error_code: Err) -> Optional[List[bytes]]:
         return None
     if seconds_int >= 2 ** 64:
         raise ValidationError(error_code)
-    return [seconds]
+    # note that this may change the representation of seconds. If the original
+    # buffer had redundant leading zeroes, they will be stripped
+    return [int_to_bytes(seconds_int)]
 
 
 def parse_height(args: SExp, error_code: Err) -> Optional[List[bytes]]:
@@ -186,7 +190,9 @@ def parse_height(args: SExp, error_code: Err) -> Optional[List[bytes]]:
         return None
     if height_int >= 2 ** 32:
         raise ValidationError(error_code)
-    return [height]
+    # note that this may change the representation of the height. If the original
+    # buffer had redundant leading zeroes, they will be stripped
+    return [int_to_bytes(height_int)]
 
 
 def parse_fee(args: SExp) -> List[bytes]:
@@ -196,7 +202,9 @@ def parse_fee(args: SExp) -> List[bytes]:
     fee_int = int_from_bytes(fee)
     if fee_int >= 2 ** 64 or fee_int < 0:
         raise ValidationError(Err.RESERVE_FEE_CONDITION_FAILED)
-    return [fee]
+    # note that this may change the representation of the fee. If the original
+    # buffer had redundant leading zeroes, they will be stripped
+    return [int_to_bytes(fee_int)]
 
 
 def parse_coin_id(args: SExp, error_code: Err) -> List[bytes]:
@@ -226,7 +234,9 @@ def parse_amount(args: SExp) -> List[bytes]:
         raise ValidationError(Err.COIN_AMOUNT_NEGATIVE)
     if amount_int >= 2 ** 64:
         raise ValidationError(Err.COIN_AMOUNT_EXCEEDS_MAXIMUM)
-    return [amount]
+    # note that this may change the representation of amount. If the original
+    # buffer had redundant leading zeroes, they will be stripped
+    return [int_to_bytes(amount_int)]
 
 
 def parse_announcement(args: SExp) -> List[bytes]:
