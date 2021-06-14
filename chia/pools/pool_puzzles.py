@@ -94,20 +94,20 @@ def launcher_id_to_p2_puzzle_hash(launcher_id: bytes32, seconds_delay: uint64, d
     ).get_tree_hash()
 
 
-def get_delayed_puz_info_from_launcher_spend(coinsol: CoinSolution):
+def get_delayed_puz_info_from_launcher_spend(coinsol: CoinSolution) -> Tuple[uint64, bytes32]:
     extra_data = Program.from_bytes(bytes(coinsol.solution)).rest().rest().first()
     # Extra data is (pool_state delayed_puz_info)
     delayed_puz_info = extra_data.rest().first()
     # Delayed puz info is (seconds delayed_puzhash)
-    seconds = delayed_puz_info.first().as_atom()
+    seconds = int.from_bytes(delayed_puz_info.first().as_atom(), "big")
     delayed_puzhash = delayed_puz_info.rest().first().as_atom()
-    return seconds, delayed_puzhash
+    return uint64(seconds), delayed_puzhash
 
 
 ######################################
 
 
-def uncurry_singleton_inner_puzzle(puzzle: Program):
+def uncurry_singleton_inner_puzzle(puzzle: Program) -> Program:
     r = puzzle.uncurry()
     if r is None:
         return False
@@ -115,13 +115,14 @@ def uncurry_singleton_inner_puzzle(puzzle: Program):
     return inner_f
 
 
-def get_seconds_and_delayed_puzhash_from_p2_singleton_puzzle(puzzle: Program):
+def get_seconds_and_delayed_puzhash_from_p2_singleton_puzzle(puzzle: Program) -> Tuple[uint64, bytes32]:
     r = puzzle.uncurry()
     if r is None:
         return False
     inner_f, args = r
     SINGLETON_MOD_HASH, LAUNCHER_ID, LAUNCHER_PUZZLE_HASH, SECONDS_DELAY, DELAYED_PUZZLE_HASH = list(args.as_iter())
-    return SECONDS_DELAY.as_atom(), DELAYED_PUZZLE_HASH.as_atom()
+    SECONDS_DELAY = uint64(int.from_bytes(SECONDS_DELAY.as_atom(), "big"))
+    return SECONDS_DELAY, DELAYED_PUZZLE_HASH.as_atom()
 
 
 # Verify that a puzzle is a Pool Wallet Singleton
@@ -296,13 +297,15 @@ def get_pubkey_from_member_inner_puzzle(inner_puzzle: Program) -> G1Element:
     return pubkey
 
 
-def uncurry_pool_member_inner_puzzle(inner_puzzle: Program):  # -> Optional[Tuple[Program, Program, Program]]:
+def uncurry_pool_member_inner_puzzle(
+    inner_puzzle: Program,
+) -> Tuple[Program, Program, Program, Program, Program, Program]:
     """
     Take a puzzle and return `None` if it's not a "pool member" inner puzzle, or
     a triple of `mod_hash, relative_lock_height, pubkey` if it is.
     """
     if not is_pool_member_inner_puzzle(inner_puzzle):
-        raise ValueError("Attempting to unpack a non-waitingroom inner puzzle")
+        raise ValueError("Attempting to unpack a non-member inner puzzle")
     r = inner_puzzle.uncurry()
     if r is None:
         raise ValueError("Failed to unpack inner puzzle")
