@@ -325,7 +325,6 @@ def get_name_puzzle_conditions(
         block_program, block_program_args = setup_generator_args(generator)
         max_cost -= len(bytes(generator.program)) * cost_per_byte
         if max_cost < 0:
-            breakpoint()
             return NPCResult(uint16(Err.INVALID_BLOCK_COST.value), [], uint64(0))
         if safe_mode:
             clvm_cost, result = GENERATOR_MOD.run_safe_with_cost(max_cost, block_program, block_program_args)
@@ -334,7 +333,6 @@ def get_name_puzzle_conditions(
 
         max_cost -= clvm_cost
         if max_cost < 0:
-            breakpoint()
             return NPCResult(uint16(Err.INVALID_BLOCK_COST.value), [], uint64(0))
         npc_list: List[NPC] = []
 
@@ -357,7 +355,6 @@ def get_name_puzzle_conditions(
                 cost, cvl = parse_condition(cond, safe_mode)
                 max_cost -= cost
                 if max_cost < 0:
-                    breakpoint()
                     return NPCResult(uint16(Err.INVALID_BLOCK_COST.value), [], uint64(0))
                 if cvl is not None:
                     conditions_list.append(cvl)
